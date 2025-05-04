@@ -22,4 +22,4 @@ WRITE_INTERVAL = 10
 # SQLITE info
 SQLITE_FILE = "/var/tmp/wf_log.sdb"
 SQLITE_SCHEMA = """CREATE TABLE archive (timestamp INTEGER NOT NULL UNIQUE PRIMARY KEY, 
-            latitude REAL, longitude REAL, depth REAL, distance REAL);"""
+            latitude REAL, longitude REAL, depth REAL, distance REAL, wind_speed REAL, wind_direction REAL);"""

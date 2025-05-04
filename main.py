@@ -77,6 +77,8 @@ def nmea_loop(connection: sqlite3.Connection):
     last_distance = None
     # Last value for the depth
     last_depth = None
+    # Last value for wind
+    last_wind = None
 
     # Open the socket connection and start reading lines
     for line in gen_nmea(NMEA_HOST, NMEA_PORT):
@@ -96,12 +98,14 @@ def nmea_loop(connection: sqlite3.Connection):
         else:
             # Parsing went ok.
             sentence_type = parsed_nmea["sentence_type"]
-            if sentence_type == "GPT":
+            if sentence_type == "DPT":
                 # Save the depth
                 last_depth = parsed_nmea
             elif sentence_type == "VLW":
                 # Save the distance
                 last_distance = parsed_nmea
+            elif sentence_type == "MDA":
+                last_wind = parsed_nmea
             elif sentence_type == 'GLL':
                 # GLL sentences trigger a write. Make sure enough time has elapsed since the last write.
                 delta = parsed_nmea["timestamp"] - last_write
@@ -110,12 +114,16 @@ def nmea_loop(connection: sqlite3.Connection):
                     # Use null values for depth and distance if we haven't seen them yet.
                     depth = last_depth.get("water_depth_meters") if last_depth else None
                     distance = last_distance.get("water_total_nm") if last_distance else None
+                    wind_speed = last_wind.get("tws_knots") if last_wind else None
+                    wind_direction = last_wind.get("twd_true") if last_wind else None
                     write_record(connection,
                                  parsed_nmea["timestamp"],
                                  parsed_nmea["latitude"],
                                  parsed_nmea["longitude"],
                                  depth,
-                                 distance)
+                                 distance,
+                                 wind_speed,
+                                 wind_direction)
                     last_write = parsed_nmea["timestamp"]
 
 
@@ -134,13 +142,15 @@ def write_record(connection: sqlite3.Connection,
                  timestamp: int,
                  latitude: str, longitude: str,
                  depth: str | None,
-                 distance: str | None):
+                 distance: str | None,
+                 wind_speed: str | None,
+                 wind_direction: str | None) -> None:
     """Write an entry in the database."""
     # Time should be in seconds (not milliseconds):
     t = int(timestamp / 1000 + 0.5)
     with connection:
-        connection.execute("INSERT INTO archive VALUES (?, ?, ?, ?, ?)",
-                           (t, latitude, longitude, depth, distance))
+        connection.execute("INSERT INTO archive VALUES (?, ?, ?, ?, ?, ?, ?)",
+                           (t, latitude, longitude, depth, distance, wind_speed, wind_direction))
 
 
 def warn_print_sleep(msg: str):

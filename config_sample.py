@@ -16,6 +16,9 @@ NMEA_PORT = 10110
 NMEA_TIMEOUT = 20
 NMEA_RETRY_WAIT = 60
 
+# How old a type can be in seconds and still be useful
+STALE = 20
+
 # How often, in seconds, to write a record to the SQLITE file
 WRITE_INTERVAL = 10
 

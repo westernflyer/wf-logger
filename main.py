@@ -97,6 +97,8 @@ def nmea_loop(connection: sqlite3.Connection):
             continue
         else:
             # Parsing went ok.
+            # Convert time to seconds (instead of milliseconds):
+            parsed_nmea["timestamp"] /= 1000.0
             sentence_type = parsed_nmea["sentence_type"]
             if sentence_type == "DPT":
                 # Save the depth
@@ -109,13 +111,13 @@ def nmea_loop(connection: sqlite3.Connection):
             elif sentence_type == 'GLL':
                 # GLL sentences trigger a write. Make sure enough time has elapsed since the last write.
                 delta = parsed_nmea["timestamp"] - last_write
-                if delta >= WRITE_INTERVAL * 1000.0:
+                if delta >= WRITE_INTERVAL:
                     # It's been long enough. Do a write.
-                    # Use null values for depth and distance if we haven't seen them yet.
-                    depth = last_depth.get("water_depth_meters") if last_depth else None
-                    distance = last_distance.get("water_total_nm") if last_distance else None
-                    wind_speed = last_wind.get("tws_knots") if last_wind else None
-                    wind_direction = last_wind.get("twd_true") if last_wind else None
+                    # Check for stale values and substitute None for them
+                    depth = check_stale(last_depth, "water_depth_meters")
+                    distance = check_stale(last_distance, "water_total_nm")
+                    wind_speed = check_stale(last_wind, "tws_knots")
+                    wind_direction = check_stale(last_wind, "twd_true")
                     write_record(connection,
                                  parsed_nmea["timestamp"],
                                  parsed_nmea["latitude"],
@@ -138,6 +140,13 @@ def gen_nmea(host: str, port: int):
                 yield line.strip()
 
 
+def check_stale(parsed_nmea, name):
+    if parsed_nmea and time.time() - parsed_nmea["timestamp"] <= STALE:
+        return parsed_nmea.get(name)
+    else:
+        return None
+
+
 def write_record(connection: sqlite3.Connection,
                  timestamp: int,
                  latitude: str, longitude: str,
@@ -146,8 +155,8 @@ def write_record(connection: sqlite3.Connection,
                  wind_speed: str | None,
                  wind_direction: str | None) -> None:
     """Write an entry in the database."""
-    # Time should be in seconds (not milliseconds):
-    t = int(timestamp / 1000 + 0.5)
+    # Round timestamp to the nearest integer
+    t = int(timestamp + 0.5)
     with connection:
         connection.execute("INSERT INTO archive VALUES (?, ?, ?, ?, ?, ?, ?)",
                            (t, latitude, longitude, depth, distance, wind_speed, wind_direction))

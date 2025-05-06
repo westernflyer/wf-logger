@@ -1,0 +1,23 @@
+# systemd service configuration file for wf-logger
+
+[Unit]
+Description=Write key NMEA0183 data to a SQLite database
+Requires=time-sync.target
+After=time-sync.target
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+# Path to the 'parse_nmea' module:
+Environment="PYTHONPATH=/home/nmea/git/nmea-mqtt-py"
+Type=simple
+WorkingDirectory=/home/nmea/git/wf-logger
+# This relies on the working directory above being set correctly.
+ExecStart= /home/nmea/git/wf-logger/.venv/bin/python3 -m main
+StandardOutput=null
+StandardError=journal+console
+User=nmea
+Group=nmea
+
+[Install]
+WantedBy=multi-user.target

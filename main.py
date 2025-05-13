@@ -23,7 +23,7 @@ if sys.platform == "darwin":
     address = '/var/run/syslog'
 else:
     address = '/dev/log'
-log = logging.getLogger("depth-csv")
+log = logging.getLogger("wf-logger")
 log.setLevel(logging.DEBUG if DEBUG else logging.INFO)
 handler = SysLogHandler(address=address)
 formatter = logging.Formatter('%(name)s: %(levelname)s %(message)s')

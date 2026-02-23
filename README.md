@@ -1,8 +1,8 @@
-## wf-logger
+# wf-logger
 
-Read NMEA 0183 data from a socket, then store selected data to a SQLite file.
+Read NMEA 0183 data from a socket, then store selected data in an SQLite file.
 
-### Installation
+## Installation
 
 1. Clone the repository to a convenient place
 
@@ -19,3 +19,12 @@ Read NMEA 0183 data from a socket, then store selected data to a SQLite file.
    sudo systemctl start wf-logger
    sudo systemctl enable wf-logger
    ```
+
+# License & Copyright
+
+Copyright (c) 2024-present Tom Keffer <tkeffer@gmail.com>
+
+This source code is licensed under the MIT license found in the
+LICENSE file in the root directory of this source tree.
+
+See the file LICENSE for your full rights.
